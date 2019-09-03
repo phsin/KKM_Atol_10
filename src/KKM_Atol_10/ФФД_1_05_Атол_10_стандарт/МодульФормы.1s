@@ -168,8 +168,12 @@
 
 Процедура НастройкаСвойств()
 	
-	fptr.showProperties(_cons.LIBFPTR_GUI_PARENT_NATIVE );
+	//fptr.showProperties( fptr.LIBFPTR_GUI_PARENT_NATIVE, );
 
+	Сервис = СоздатьОбъект("РасширениеФормы");
+	д = Сервис.Дескриптор;
+	fptr.showProperties( fptr.LIBFPTR_GUI_PARENT_NATIVE, д);
+	
 КонецПроцедуры
 
 //{ =============== Чек ========================
@@ -828,15 +832,13 @@
 // --------------------------- Подключение к устройству -----------------------------//
 Процедура ПодключениеФР()
 	
-	_cons = fptr.constants();
-    fptr.setSingleSetting( _cons.LIBFPTR_SETTING_MODEL, Строка(_cons.LIBFPTR_MODEL_ATOL_AUTO) );
-    fptr.setSingleSetting( _cons.LIBFPTR_SETTING_PORT, Строка(_cons.LIBFPTR_PORT_COM) );
-	fptr.setSingleSetting( _cons.LIBFPTR_SETTING_COM_FILE, "COM"+НомерПорта);
-    fptr.setSingleSetting( _cons.LIBFPTR_SETTING_BAUDRATE, Строка(_cons.LIBFPTR_PORT_BR_115200));
-    fptr.applySingleSettings();
-	
-	//fptr.showProperties(_cons.LIBFPTR_GUI_PARENT_NATIVE, "дескриптор окна");
-	
+	//_cons = fptr.constants();
+    //fptr.setSingleSetting( _cons.LIBFPTR_SETTING_MODEL, Строка(_cons.LIBFPTR_MODEL_ATOL_AUTO) );
+    //fptr.setSingleSetting( _cons.LIBFPTR_SETTING_PORT, Строка(_cons.LIBFPTR_PORT_COM) );
+	//fptr.setSingleSetting( _cons.LIBFPTR_SETTING_COM_FILE, "COM"+НомерПорта);
+    //fptr.setSingleSetting( _cons.LIBFPTR_SETTING_BAUDRATE, Строка(_cons.LIBFPTR_PORT_BR_115200));
+    //fptr.applySingleSettings();
+		
 	ответ = fptr.open();
 	Ошибка(Ответ);	
 	
@@ -996,34 +998,35 @@
 //}
 
 // ОШИБКА: отсутствует интерфейс IInitDone
-//
+
 //ИмяКомпоненты = "addin_fptr10_x86.dll";
 //ИмяКомпоненты = "addin_fptr10_x64.dll";
-//ИмяКомпоненты = "fptr10.dll";
+ИмяКомпоненты = "fptr10.dll";
 //Если ЗагрузитьВнешнююКомпоненту(ИмяКомпоненты) <> 0  Тогда
-//
-//	Попытка
-//		fptr = СоздатьОбъект("AddIn.Fptr10");
-//	исключение
-//		Сообщить("Ошибка при создании объекта "+ИмяКомпоненты,"!");
-//	конецпопытки;
+	ПодключитьВнешнююКомпоненту(ИмяКомпоненты);
+
+	Попытка
+		fptr = СоздатьОбъект("AddIn.Fptr10");
+	исключение
+		Сообщить("Ошибка при создании объекта "+ИмяКомпоненты,"!");
+	конецпопытки;
 //Иначе
 //	Сообщить("Ошибка загрузки внешней компоненты "+ИмяКомпоненты+"
 //	|"+ОписаниеОшибки(),"");
 //КонецЕсли;
 //
 
-ИмяКомпоненты = "AddIn.Fptr10";
+////ИмяКомпоненты = "AddIn.Fptr10";
 //ИмяКомпоненты = "AddIn.Fptr10_kb99";
-Сообщить("Подключаем ["+ИмяКомпоненты+"] ");
-Попытка
-	ПодключитьВнешнююКомпоненту(ИмяКомпоненты);
-	//ЗагрузитьВнешнююКомпоненту(ИмяКомпоненты);
-	fptr = СоздатьОбъект(ИмяКомпоненты);
-Исключение
-	ошибка = "Компонента ["+ИмяКомпоненты+"] не зарегистрирована ";
-	Сообщить(Ошибка + ОписаниеОшибки(),"!"); 	
-КонецПопытки;
+//Сообщить("Подключаем ["+ИмяКомпоненты+"] ");
+//Попытка
+//	ПодключитьВнешнююКомпоненту(ИмяКомпоненты);
+//	//ЗагрузитьВнешнююКомпоненту(ИмяКомпоненты);
+//	fptr = СоздатьОбъект(ИмяКомпоненты);
+//Исключение
+//	ошибка = "Компонента ["+ИмяКомпоненты+"] не зарегистрирована ";
+//	Сообщить(Ошибка + ОписаниеОшибки(),"!"); 	
+//КонецПопытки;
 
 НомерПорта = 6;
 НачДата = ТекущаяДата();

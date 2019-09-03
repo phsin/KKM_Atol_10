@@ -1,15 +1,46 @@
 //http://integration.atol.ru/api/?pascal#1afc0993f9
 
 Перем fptr;  // Компонента 
-Перем _cons; // Константы драйвера 
-Перем НомерЧека Экспорт;
 
 //Служебные функции
 Функция Этот(Конт) 	Возврат Конт; КонецФункции
 Функция Сам() 	Возврат Этот(Контекст); КонецФункции
 
+Процедура Ошибка(Ответ, Сообщ="", знак="!")
+	Если Ответ<>0 Тогда
+		Сообщить("Ответ = "+Ответ+" "+Сообщ + "#"+ fptr.errorCode() + "= ["+ fptr.errorDescription() +"]", знак);
+	КонецЕсли;
+КонецПроцедуры
+
+// --------------------------- Подключение к устройству -----------------------------//
+Процедура ПодключениеФР( НомерПорта=3 ) Экспорт
+	
+	Попытка
+		//fptr = fptr.constants();
+		
+	    fptr.setSingleSetting( fptr.LIBFPTR_SETTING_MODEL, Строка(fptr.LIBFPTR_MODEL_ATOL_AUTO) );
+	    fptr.setSingleSetting( fptr.LIBFPTR_SETTING_PORT, Строка(fptr.LIBFPTR_PORT_COM) );
+		fptr.setSingleSetting( fptr.LIBFPTR_SETTING_COM_FILE, "COM"+НомерПорта);
+	    fptr.setSingleSetting( fptr.LIBFPTR_SETTING_BAUDRATE, Строка(fptr.LIBFPTR_PORT_BR_115200));
+	    fptr.applySingleSettings();
+		
+		//fptr.showProperties(fptr.LIBFPTR_GUI_PARENT_NATIVE, "дескриптор окна");
+		
+		ответ = fptr.open();
+		Ошибка(Ответ);	
+		
+		Если fptr.isOpened()=0 Тогда 
+			Ошибка("Порт не открыт ");
+		КонецЕсли;
+	Исключение
+		ошибка = "Компонента [AddIn.Fptr10_kb99] не подключена ";
+		Сообщить(Ошибка + ОписаниеОшибки(),"!"); 	
+	КонецПопытки;	
+	
+КонецПроцедуры
+
 //https://htmlweb.ru/html/symbols.php
-Функция ЗаменитьСпецСимволы(Стр) Экспорт
+Функция ЗаменитьСпецСимволы(Стр) 
     Рез = СокрЛП(Стр);
 	Рез = СтрЗаменить(Рез,"&" ,"&amp;" );
 	Рез = СтрЗаменить(Рез,"""","");
@@ -42,12 +73,6 @@
 	КонецЕсли;
 КонецФункции // ПолучитьИНН() 
 
-Процедура Ошибка(Ответ, Сообщ="", знак="!")
-	Если Ответ<>0 Тогда
-		Сообщить("Ответ = "+Ответ+" "+Сообщ + "#"+ fptr.errorCode() + "= ["+ fptr.errorDescription() +"]", знак);
-	КонецЕсли;
-КонецПроцедуры
-
 Процедура ДобавитьКассира( ВыбКасса )
 	
 	Попытка
@@ -69,14 +94,14 @@
 		//Возврат;		
 	КонецЕсли;	
 	
-  	fptr.setParamString(1021, СокрЛП( Кассир.Наименование ) );
-    fptr.setParamString(1203, СокрЛП( ИНН ));
+  	fptr.setParam(1021, СокрЛП( Кассир.Наименование ) );
+    fptr.setParam(1203, СокрЛП( ИНН ));
     fptr.operatorLogin();
 	
 КонецПроцедуры
 
 // // ---------------------------------- Открыть смену ------------------------------------//
-Процедура ОткрытьСмену()
+Процедура ОткрытьСмену( ВыбКасса ) Экспорт
 	
 	ДобавитьКассира( ВыбКасса );
 
@@ -89,11 +114,11 @@
 КонецПроцедуры
 
 // // ---------------------------------- Закрыть смену -------------------------------------//
-Процедура ЗакрытьСмену( ВыбКасса )
+Процедура ЗакрытьСмену( ВыбКасса ) Экспорт
 	
 	ДобавитьКассира( ВыбКасса );
 	
-    fptr.setParamInt( _cons.LIBFPTR_PARAM_REPORT_TYPE, _cons.LIBFPTR_RT_CLOSE_SHIFT);
+    fptr.setParam( fptr.LIBFPTR_PARAM_REPORT_TYPE, fptr.LIBFPTR_RT_CLOSE_SHIFT);
     Ответ = fptr.report();
 	Ошибка(Ответ);	
 
@@ -105,71 +130,77 @@
 //{ Отчеты
 
 // // ------------------------- Отчёт о состоянии расчётов ------------------------------//
-Процедура ОтчётОСостоянииРасчётов()
+Процедура ОтчётОСостоянииРасчётов() Экспорт
 	
-    fptr.setParamInt( _cons.LIBFPTR_PARAM_REPORT_TYPE, _cons.LIBFPTR_RT_OFD_EXCHANGE_STATUS);
+    fptr.setParam( fptr.LIBFPTR_PARAM_REPORT_TYPE, fptr.LIBFPTR_RT_OFD_EXCHANGE_STATUS);
     Ответ = fptr.report();	
 	Ошибка(Ответ);	
 
 КонецПроцедуры
 
-Процедура ОтчетХ()
+Процедура ОтчетХ() Экспорт
 	
-	fptr.setParamInt( _cons.LIBFPTR_PARAM_REPORT_TYPE, _cons.LIBFPTR_RT_X);
+	fptr.setParam( fptr.LIBFPTR_PARAM_REPORT_TYPE, fptr.LIBFPTR_RT_X);
     Ответ = fptr.report();	
 	Ошибка(Ответ);	
 	
 КонецПроцедуры
 
-Процедура ОтчетСостояниеСвязи()
+Процедура ОтчетСостояниеСвязи() Экспорт
 	
-	fptr.setParamInt( _cons.LIBFPTR_PARAM_REPORT_TYPE, _cons.LIBFPTR_RT_OFD_TEST);
+	fptr.setParam( fptr.LIBFPTR_PARAM_REPORT_TYPE, fptr.LIBFPTR_RT_OFD_TEST);
     Ответ = fptr.report();
 	Ошибка(Ответ);	
 	
-    fptr.setParamInt( _cons.LIBFPTR_PARAM_FN_DATA_TYPE, _cons.LIBFPTR_FNDT_OFD_EXCHANGE_STATUS);
+    fptr.setParam( fptr.LIBFPTR_PARAM_FN_DATA_TYPE, fptr.LIBFPTR_FNDT_OFD_EXCHANGE_STATUS);
     Ответ = fptr.fnQueryData();
 	Ошибка(Ответ);	
 	
-	Сообщить("    exchangeStatus      := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_OFD_EXCHANGE_STATUS) );
-	Сообщить("    unsentCount         := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_DOCUMENTS_COUNT) );
-	Сообщить("    firstUnsentNumber   := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_DOCUMENT_NUMBER) );
-	Сообщить("    ofdMessageRead      := " + fptr.getParamBool( _cons.LIBFPTR_PARAM_OFD_MESSAGE_READ) );
-	Сообщить("    dateTime            := " + fptr.getParamDateTime( _cons.LIBFPTR_PARAM_DATE_TIME) );
+	Сообщить("    exchangeStatus      := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_OFD_EXCHANGE_STATUS) );
+	Сообщить("    unsentCount         := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_DOCUMENTS_COUNT) );
+	Сообщить("    firstUnsentNumber   := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_DOCUMENT_NUMBER) );
+	Сообщить("    ofdMessageRead      := " + fptr.getParamBool( fptr.LIBFPTR_PARAM_OFD_MESSAGE_READ) );
+	Сообщить("    dateTime            := " + fptr.getParamDateTime( fptr.LIBFPTR_PARAM_DATE_TIME) );
 
 КонецПроцедуры
 
 
 // // ---------------------------------- Поддерживаемая версия ФФД ------------------------------------//
-Процедура ВерсияФФД()
+Процедура ВерсияФФД() Экспорт
 	
-//	fptr.setParam( _cons.LIBFPTR_PARAM_DATA_TYPE, _cons.LIBFPTR_DT_SHORT_STATUS);
+//	fptr.setParam( fptr.LIBFPTR_PARAM_DATA_TYPE, fptr.LIBFPTR_DT_SHORT_STATUS);
 //    Ответ = fptr.queryData();
 //
-//	Сообщить("    isCashDrawerOpened      := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_CASHDRAWER_OPENED) );
-//	Сообщить("    isPaperPresent          := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_RECEIPT_PAPER_PRESENT) );
-//	Сообщить("    isPaperNearEnd          := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_PAPER_NEAR_END) );
-//	Сообщить("    isCoverOpened           := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_COVER_OPENED) );
+//	Сообщить("    isCashDrawerOpened      := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_CASHDRAWER_OPENED) );
+//	Сообщить("    isPaperPresent          := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_RECEIPT_PAPER_PRESENT) );
+//	Сообщить("    isPaperNearEnd          := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_PAPER_NEAR_END) );
+//	Сообщить("    isCoverOpened           := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_COVER_OPENED) );
 	
-	fptr.setParamInt( _cons.LIBFPTR_PARAM_FN_DATA_TYPE, _cons.LIBFPTR_FNDT_FFD_VERSIONS);
+	fptr.setParam( fptr.LIBFPTR_PARAM_FN_DATA_TYPE, fptr.LIBFPTR_FNDT_FFD_VERSIONS);
     Ответ = fptr.fnQueryData();
 	Ошибка(Ответ);	
 	
-	Сообщить("    deviceFfdVersion    := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_DEVICE_FFD_VERSION) );
-	Сообщить("    fnFfdVersion        := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_FN_FFD_VERSION) );
-	Сообщить("    ffdVersion          := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_FFD_VERSION) );
-	Сообщить("    maxFfdVersion       := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_DEVICE_MAX_FFD_VERSION) );
-	Сообщить("    minFfdVersion       := " + fptr.getParamInt( _cons.LIBFPTR_PARAM_DEVICE_MIN_FFD_VERSION) );
+	Сообщить("    deviceFfdVersion    := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_DEVICE_FFD_VERSION) );
+	Сообщить("    fnFfdVersion        := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_FN_FFD_VERSION) );
+	Сообщить("    ffdVersion          := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_FFD_VERSION) );
+	Сообщить("    maxFfdVersion       := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_DEVICE_MAX_FFD_VERSION) );
+	Сообщить("    minFfdVersion       := " + fptr.getParamInt( fptr.LIBFPTR_PARAM_DEVICE_MIN_FFD_VERSION) );
 
 КонецПроцедуры
 
 //} отчеты
 
 
-Процедура НастройкаСвойств()
+Процедура НастройкаСвойств() Экспорт
 	
-	fptr.showProperties(_cons.LIBFPTR_GUI_PARENT_NATIVE );
+	fptr.showProperties(fptr.LIBFPTR_GUI_PARENT_NATIVE );
 
+КонецПроцедуры
+
+Процедура ОтменитьЧек()
+	
+	fptr.cancelReceipt();
+	
 КонецПроцедуры
 
 //{ =============== Чек ========================
@@ -202,7 +233,7 @@
 //регистрация оплат
 //закрытие чека
 //проверка состояния чека
-Процедура ОткрытьЧек( док )
+Процедура ОткрытьЧек( ВыбКасса, Док )
 	
 	ДобавитьКассира( ВыбКасса );
 		
@@ -215,29 +246,29 @@
 	//LIBFPTR_RT_BUY - чек расхода
 	//LIBFPTR_RT_BUY_RETURN - чек возврата расхода
 	//LIBFPTR_RT_BUY_CORRECTION - чек коррекции расхода	
-   	fptr.setParamInt( _cons.LIBFPTR_PARAM_RECEIPT_TYPE, _cons.LIBFPTR_RT_SELL);
+   	fptr.setParam( fptr.LIBFPTR_PARAM_RECEIPT_TYPE, fptr.LIBFPTR_RT_SELL);
 	
 	////Открытие электронного чека
 	//Чтобы чек не печатался (электронный чек), нужно установить параметру LIBFPTR_PARAM_RECEIPT_ELECTRONICALLY значение true и передать реквизит 1008 (электронный адрес или телефон получателя).	
-    //fptr.setParam( _cons.LIBFPTR_PARAM_RECEIPT_TYPE, _cons.LIBFPTR_RT_SELL);
-    //fptr.setParam( _cons.LIBFPTR_PARAM_RECEIPT_ELECTRONICALLY, 1);
+    //fptr.setParam( fptr.LIBFPTR_PARAM_RECEIPT_TYPE, fptr.LIBFPTR_RT_SELL);
+    //fptr.setParam( fptr.LIBFPTR_PARAM_RECEIPT_ELECTRONICALLY, 1);
 	//1008	Электронный адрес / телефон получателя	string
-    fptr.setParamString(1008, СокрЛП(Док.Контрагент.ЭлПочта) );
+    fptr.setParam(1008, СокрЛП(Док.Контрагент.ЭлПочта) );
 
 	//1227	Наименование получателя	string
-	fptr.setParamString(1227, ЗаменитьСпецСимволы(Док.Контрагент.ЮрФизЛицо.ПолнНаименование) );
+	fptr.setParam(1227, ЗаменитьСпецСимволы(Док.Контрагент.ЮрФизЛицо.ПолнНаименование) );
 	//1228	ИНН получателя	string
-	fptr.setParamString(1228, ПолучитьИНН(Док.Контрагент) );
+	fptr.setParam(1228, ПолучитьИНН(Док.Контрагент) );
 	//1117	Электронный адрес отправителя чека	string
-	fptr.setParamString(1117, Док.Фирма.ЭлПочта );
+	fptr.setParam(1117, Док.Фирма.ЭлПочта );
 	//1055	Применяемая система налогообложения (СНО)	int
-	fptr.setParamInt(1055, _cons.LIBFPTR_TT_OSN );
+	fptr.setParam(1055, fptr.LIBFPTR_TT_OSN );
 	//1187	Место расчета	string
 	//1060	Адрес сайта ФНС	string
 	//1057	Признак агента	int
-	fptr.setParamInt(1055, _cons.LIBFPTR_AT_NONE );
+	fptr.setParam(1055, fptr.LIBFPTR_AT_NONE );
 	//1171	Телефон поставщика	string
-	//fptr.setParamString(1171, СокрЛП(Док.Фирма.ЮрЛицо.Телефоны) );
+	//fptr.setParam(1171, СокрЛП(Док.Фирма.ЮрЛицо.Телефоны) );
 	//1044	Операция платежного агента	string
 	//1073	Телефон платежного агента (может повторяться несколько раз)	string
 	//1005	Адрес оператора перевода	string
@@ -249,9 +280,9 @@
 	//1192	Дополнительный реквизит чека (БСО)	string
 		
     Ответ = fptr.openReceipt();	
-	Ошибка( Ответ );
+	//Ошибка( Ответ );
 
-	//fptr.setParamString( _cons.LIBFPTR_PARAM_TEXT, "ИНН покупателя: "+ПолучитьИНН(Док.Контрагент) );
+	//fptr.setParam( fptr.LIBFPTR_PARAM_TEXT, "ИНН покупателя: "+ПолучитьИНН(Док.Контрагент) );
     //fptr.printText();
 	
 КонецПроцедуры
@@ -263,45 +294,89 @@
 		//Константы LIBFPTR_TAX_VAT20 и LIBFPTR_TAX_VAT120 передаются в ККТ теми же значениями, 
 		//как и LIBFPTR_TAX_VAT18 и LIBFPTR_TAX_VAT118. 
 		//ПО может работать с любыми из этих констант.
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 3 );
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT20  );
+		fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 3 );
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT20  );
 	ИначеЕсли (Док.СтавкаНДС = Перечисление.СтавкиНДС.НДС18_118) или (Док.СтавкаНДС = Перечисление.СтавкиНДС.НДС20_120) Тогда
 		//Константы LIBFPTR_TAX_VAT20 и LIBFPTR_TAX_VAT120 передаются в ККТ теми же значениями, 
 		//как и LIBFPTR_TAX_VAT18 и LIBFPTR_TAX_VAT118. 
 		//ПО может работать с любыми из этих констант.
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 3 );
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT120  );
+		fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 3 );
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT120  );
 	ИначеЕсли (Док.СтавкаНДС = Перечисление.СтавкиНДС.НДС10_110) Тогда
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 2 );
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT110  );
+		fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 2 );
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT110  );
 	Иначе // 10%  = Авто
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 2 );
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT10 );
+		fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 2 );
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT10 );
 	КонецЕсли;	
 	
 КонецФункции
 
-Функция ПолучитьНомерЧека()
-	
-    fptr.setParam( _cons.LIBFPTR_PARAM_DATA_TYPE, _cons.LIBFPTR_DT_STATUS);
-    fptr.queryData();
-	
-	НомерЧека = fptr.getParamInt( _cons.LIBFPTR_PARAM_RECEIPT_NUMBER );
-	НомерДока = fptr.getParamInt( _cons.LIBFPTR_PARAM_DOCUMENT_NUMBER );
+Функция ПолучитьНомерЧека(НомерДока=0) Экспорт
+
+	//Нефискальный номер (внутренний номер)	
+    //fptr.setParam( fptr.LIBFPTR_PARAM_DATA_TYPE, fptr.LIBFPTR_DT_STATUS);
+	//fptr.setParam( fptr.LIBFPTR_PARAM_DATA_TYPE, fptr.LIBFPTR_DT_RECEIPT_STATE);
+    //fptr.queryData();
+	//
+	//Попытка
+	//	НомерЧека = fptr.getParamInt( fptr.LIBFPTR_PARAM_RECEIPT_NUMBER ); 
+	//Исключение 
+	//		НомерЧека=0; 
+	//КонецПопытки;
+	//Попытка
+	//	НомерДока = fptr.getParamInt( fptr.LIBFPTR_PARAM_DOCUMENT_NUMBER );
+	//Исключение
+	//	НомерДока =0;
+	//КонецПопытки;
+
+	//Фискальный НомерЧека	
+	fptr.setParam(fptr.LIBFPTR_PARAM_FN_DATA_TYPE, fptr.LIBFPTR_FNDT_LAST_DOCUMENT);
+    fptr.fnQueryData();
+
+    НомерЧека  = fptr.getParamInt( fptr.LIBFPTR_PARAM_DOCUMENT_NUMBER);
+
+    fiscalSign = fptr.getParamString( fptr.LIBFPTR_PARAM_FISCAL_SIGN);
+
+    dateTime   = fptr.getParamDateTime( fptr.LIBFPTR_PARAM_DATE_TIME);	
 	
 	возврат НомерЧека;
 	
 КонецФункции
 
-Функция ОПЛАТА( Док ) Экспорт
+Функция ЗаписатьНомерЧека( док, НомерЧека )
+	
+	Попытка
+		Если ПустоеЗначение(Док.НомерЧекаККМ)=0 Тогда
+			
+			Сообщить("Для документа уже введен чек "+Док.НомерЧекаККМ+" создан новый чек "+НомерЧека,"!!");
+			Сообщить("Для документа новый номер чека "+НомерЧека+" НЕ ЗАПИСАН ","!!");
+		
+		Иначе
+			
+			ДокОбъект = СоздатьОбъект("Документ");
+			ДокОбъект.НайтиДокумент(Док);
+			ДокОбъект.НомерЧекаККМ = НомерЧека;
+			ДокОбъект.Записать();
+			
+		КонецЕсли;
+		
+	Исключение
+		Сообщить("Номер чека "+НомерЧека+" не записан в документ "+ДокОбъект+" 
+		|"+ОписаниеОшибки());
+	КонецПопытки;
+	
+КонецФункции
 
-	ОткрытьЧек( док );
+Функция ОПЛАТА( ВыбКасса, Док ) Экспорт
+
+	ОткрытьЧек( ВыбКасса, Док );
 	
 	Если Док.ДокОснование.Вид() = "РеализацияПрочее" Тогда
 
- 		fptr.setParamString( _cons.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы(Док.Приложение) );
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_PRICE, Док.СуммаВзаиморасчетов);
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_QUANTITY, 1);	    
+ 		fptr.setParam( fptr.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы(Док.Приложение) );
+	    fptr.setParam( fptr.LIBFPTR_PARAM_PRICE, Док.СуммаВзаиморасчетов);
+	    fptr.setParam( fptr.LIBFPTR_PARAM_QUANTITY, 1);	    
 
 		//1212	Признак предмета расчета	int
 		// Признак предмета расчёта. Свойство ItemType может принимать значения:
@@ -318,9 +393,9 @@
 		// 	11 -  предмет расчета, состоящий из предметов, каждому из которых может быть присвоено значение от 0 до 10 (набор)
 		// 	12 -  предмет расчета, не относящийся к предметам расчета, которым может быть присвоено значение от 0 до 11
 		Попытка
-			fptr.setParamInt( 1212, Док.ФФД_ПредметаРасчёта  );
+			fptr.setParam( 1212, Док.ФФД_ПредметаРасчёта  );
 		Исключение
-			fptr.setParamInt( 1212, 10  );
+			fptr.setParam( 1212, 10  );
 		КонецПопытки;		
 		
 		//1214	Признак способа расчета	int
@@ -333,40 +408,40 @@
 		// 	6 - Передача предмета расчета без его оплаты в момент его передачи с последующей оплатой в кредит
 		// 	7 - Оплата предмета расчета после его передачи с оплатой в кредит (оплата кредита)
 		Попытка
-			fptr.setParamInt( 1214, Док.ФФД_СпособРасчёта  );
+			fptr.setParam( 1214, Док.ФФД_СпособРасчёта  );
 		Исключение
-			fptr.setParamInt( 1214, 7 );
+			fptr.setParam( 1214, 7 );
 		КонецПопытки;			
 
 		////1222	Признак агента по предмету расчета	int
-		//fptr.setParamInt( 1222, _cons.LIBFPTR_AT_NONE );
+		//fptr.setParam( 1222, fptr.LIBFPTR_AT_NONE );
 		
 		////Регистрация позиции без расчета суммы налога
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT0);	// !!! НДС не облагается	
-		//fptr.setParam( _cons.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT0);	// !!! НДС не облагается	
+		//fptr.setParam( fptr.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
 		Ответ = fptr.registration();		
 		Ошибка( Ответ );
 	    
 
 		//Если Док.СтавкаНДС = Перечисление.СтавкиНДС.НДС10 Тогда
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_DEPARTMENT, 2 );
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT10 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 2 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT10 );
 		//Иначе //18/20 %
 		//	//Константы LIBFPTR_TAX_VAT20 и LIBFPTR_TAX_VAT120 передаются в ККТ теми же значениями, как и LIBFPTR_TAX_VAT18 и LIBFPTR_TAX_VAT118. ПО может работать с любыми из этих констант.
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_DEPARTMENT, 3 );
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT20  );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 3 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT20  );
 		//КонецЕсли;
 		//
-		//fptr.setParam( _cons.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
+		//fptr.setParam( fptr.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
 		//fptr.registration();
 	    //fptr.receiptTax();	
 		
 	ИначеЕсли Док.Аванс=1 Тогда
 		//Предоплата 
 		
-	    fptr.setParamString( _cons.LIBFPTR_PARAM_COMMODITY_NAME,  "предоплата за мясопродукцию из мяса птицы в ассортименте по договору" );
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_PRICE, Док.Сумма);
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_QUANTITY, 1);	    
+	    fptr.setParam( fptr.LIBFPTR_PARAM_COMMODITY_NAME,  "предоплата за мясопродукцию из мяса птицы в ассортименте по договору" );
+	    fptr.setParam( fptr.LIBFPTR_PARAM_PRICE, Док.Сумма);
+	    fptr.setParam( fptr.LIBFPTR_PARAM_QUANTITY, 1);	    
 
 		//1212	Признак предмета расчета	int
 		// Признак предмета расчёта. Свойство ItemType может принимать значения:
@@ -383,9 +458,9 @@
 		// 	11 -  предмет расчета, состоящий из предметов, каждому из которых может быть присвоено значение от 0 до 10 (набор)
 		// 	12 -  предмет расчета, не относящийся к предметам расчета, которым может быть присвоено значение от 0 до 11
 		Попытка
-			fptr.setParamInt( 1212, Док.ФФД_ПредметаРасчёта  );
+			fptr.setParam( 1212, Док.ФФД_ПредметаРасчёта  );
 		Исключение
-			fptr.setParamInt( 1212, 10  );
+			fptr.setParam( 1212, 10  );
 		КонецПопытки;		
 		
 		//1214	Признак способа расчета	int
@@ -398,30 +473,30 @@
 		// 	6 - Передача предмета расчета без его оплаты в момент его передачи с последующей оплатой в кредит
 		// 	7 - Оплата предмета расчета после его передачи с оплатой в кредит (оплата кредита)
 		Попытка
-			fptr.setParamInt( 1214, Док.ФФД_СпособРасчёта  );
+			fptr.setParam( 1214, Док.ФФД_СпособРасчёта  );
 		Исключение
-			fptr.setParamInt( 1214, 2 );
+			fptr.setParam( 1214, 2 );
 		КонецПопытки;			
 
 		////1222	Признак агента по предмету расчета	int
-		//fptr.setParamInt( 1222, _cons.LIBFPTR_AT_NONE );
+		//fptr.setParam( 1222, fptr.LIBFPTR_AT_NONE );
 		
 		////Регистрация позиции без расчета суммы налога
-		//fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT0);		
-		//fptr.setParam( _cons.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
+		//fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT0);		
+		//fptr.setParam( fptr.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
 		//fptr.registration();		
 	    
 
 		УстановитьСтавкуНДС( док );
 		
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
 		Ответ = fptr.registration();		
 		Ошибка( Ответ );
 	    //fptr.receiptTax();		
 			
 		////Допускается регистрация итога меньше суммы чека, но только в рамках копеек. Т.е., если общая сумма чека равна 1000.57, то можно зарегистрировать итог от 1000.00 до 1000.57.
 		////Метод не является обязательным. Если его не использовать, сумма чека будет посчитана автоматически, без округлений копеек.
-		//fptr.setParam( _cons.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
+		//fptr.setParam( fptr.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
 	    //fptr.receiptTotal();
 		
 		//Способ расчета (LIBFPTR_PARAM_PAYMENT_TYPE) может принимать следующие значения:
@@ -435,8 +510,8 @@
 		//LIBFPTR_PT_8 - способ расчета №8
 		//LIBFPTR_PT_9 - способ расчета №9
 		//LIBFPTR_PT_10 - способ расчета №10	
-		//fptr.setParam( _cons.LIBFPTR_PARAM_PAYMENT_TYPE, _cons.LIBFPTR_PT_PREPAID);	
-		//fptr.setParamDouble(_cons.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
+		//fptr.setParam( fptr.LIBFPTR_PARAM_PAYMENT_TYPE, fptr.LIBFPTR_PT_PREPAID);	
+		//fptr.setParam(fptr.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
 	    //fptr.cashIncome();	
 	    //fptr.closeReceipt();	
 			
@@ -460,9 +535,9 @@
 		тз.ВыбратьСтроки();
 		Пока тз.ПолучитьСтроку() = 1 Цикл
 		
-		    fptr.setParamString( _cons.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы(тз.Номенклатура.Наименование));
-		    fptr.setParamDouble( _cons.LIBFPTR_PARAM_PRICE, тз.Цена);
-		    fptr.setParamDouble( _cons.LIBFPTR_PARAM_QUANTITY, тз.Количество);	    
+		    fptr.setParam( fptr.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы(тз.Номенклатура.Наименование));
+		    fptr.setParam( fptr.LIBFPTR_PARAM_PRICE, тз.Цена);
+		    fptr.setParam( fptr.LIBFPTR_PARAM_QUANTITY, тз.Количество);	    
 	
 			//1212	Признак предмета расчета	int
 			// Признак предмета расчёта. Свойство ItemType может принимать значения:
@@ -478,7 +553,7 @@
 			// 	10 -  аванс, задаток, предоплата, кредит, взносе в счет оплаты, пени, штраф, вознаграждение, бонус и иной аналогичный предмет расчета
 			// 	11 -  предмет расчета, состоящий из предметов, каждому из которых может быть присвоено значение от 0 до 10 (набор)
 			// 	12 -  предмет расчета, не относящийся к предметам расчета, которым может быть присвоено значение от 0 до 11
-			fptr.setParamInt( 1212, 10 );
+			fptr.setParam( 1212, 10 );
 			
 			//1214	Признак способа расчета	int
 			// Признак способа расчёта. Свойство PaymentMode может принимать значения:
@@ -490,31 +565,31 @@
 			// 	6 - Передача предмета расчета без его оплаты в момент его передачи с последующей оплатой в кредит
 			// 	7 - Оплата предмета расчета после его передачи с оплатой в кредит (оплата кредита)
 			Попытка
-				fptr.setParamInt( 1214, Док.ФФД_СпособРасчёта  );
+				fptr.setParam( 1214, Док.ФФД_СпособРасчёта  );
 			Исключение
-				fptr.setParamInt( 1214, 7 );
+				fptr.setParam( 1214, 7 );
 			КонецПопытки;		
 	
 			////1222	Признак агента по предмету расчета	int
-			//fptr.setParamInt( 1222, _cons.LIBFPTR_AT_NONE );
+			//fptr.setParam( 1222, fptr.LIBFPTR_AT_NONE );
 			
 			//Регистрация позиции без расчета суммы налога
-			fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT0);	// !!! НДС не облагается
-			//fptr.setParamInt( _cons.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
+			fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT0);	// !!! НДС не облагается
+			//fptr.setParam( fptr.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
 			
 		    Ответ = fptr.registration();		
 			Ошибка( Ответ );
 	
 		//	Если тз.СтавкаНДС = Перечисление.СтавкиНДС.НДС10 Тогда
-		//		fptr.setParam( _cons.LIBFPTR_PARAM_DEPARTMENT, 2 );
-		//		fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT10 );
+		//		fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 2 );
+		//		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT10 );
 		//	Иначе //18/20 %
 		//		//Константы LIBFPTR_TAX_VAT20 и LIBFPTR_TAX_VAT120 передаются в ККТ теми же значениями, как и LIBFPTR_TAX_VAT18 и LIBFPTR_TAX_VAT118. ПО может работать с любыми из этих констант.
-		//		fptr.setParam( _cons.LIBFPTR_PARAM_DEPARTMENT, 3 );
-		//		fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT20  );
+		//		fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 3 );
+		//		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT20  );
 		//	КонецЕсли;
 		//
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_TAX_SUM, тз.СуммаНДС);
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_SUM, тз.СуммаНДС);
 		//    fptr.receiptTax();		
 			
 		КонецЦикла;
@@ -523,9 +598,9 @@
 		//Док.Сумма < Док.ДокОснование.СуммаВзаиморасчетов Тогда
 		// частичная оплата накладной
 		
-    	fptr.setParamString( _cons.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы( "ЧАСТИЧНЫЙ РАСЧЕТ И КРЕДИТ товар из мяса птицы №"+ НомерНаПечать(Док.ДокОснование)+" "+ Док.ДокОснование.ДатаДок ) );
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_PRICE, Док.Сумма);
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_QUANTITY, 1);	    
+    	fptr.setParam( fptr.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы( "ЧАСТИЧНЫЙ РАСЧЕТ И КРЕДИТ товар из мяса птицы №"+ НомерНаПечать(Док.ДокОснование)+" "+ Док.ДокОснование.ДатаДок ) );
+	    fptr.setParam( fptr.LIBFPTR_PARAM_PRICE, Док.Сумма);
+	    fptr.setParam( fptr.LIBFPTR_PARAM_QUANTITY, 1);	    
 
 		//1212	Признак предмета расчета	int
 		// Признак предмета расчёта. Свойство ItemType может принимать значения:
@@ -542,9 +617,9 @@
 		// 	11 -  предмет расчета, состоящий из предметов, каждому из которых может быть присвоено значение от 0 до 10 (набор)
 		// 	12 -  предмет расчета, не относящийся к предметам расчета, которым может быть присвоено значение от 0 до 11
 		Попытка
-			fptr.setParamInt( 1212, Док.ФФД_ПредметаРасчёта  );
+			fptr.setParam( 1212, Док.ФФД_ПредметаРасчёта  );
 		Исключение
-			fptr.setParamInt( 1212, 10  );
+			fptr.setParam( 1212, 10  );
 		КонецПопытки;		
 		
 		//1214	Признак способа расчета	int
@@ -557,37 +632,37 @@
 		// 	6 - Передача предмета расчета без его оплаты в момент его передачи с последующей оплатой в кредит
 		// 	7 - Оплата предмета расчета после его передачи с оплатой в кредит (оплата кредита)
 		Попытка
-			fptr.setParamInt( 1214, Док.ФФД_СпособРасчёта  );
+			fptr.setParam( 1214, Док.ФФД_СпособРасчёта  );
 		Исключение
-			fptr.setParamInt( 1214, 7 );
+			fptr.setParam( 1214, 7 );
 		КонецПопытки;			
 
 		////1222	Признак агента по предмету расчета	int
-		//fptr.setParamInt( 1222, _cons.LIBFPTR_AT_NONE );
+		//fptr.setParam( 1222, fptr.LIBFPTR_AT_NONE );
 		
 		////Регистрация позиции без расчета суммы налога
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT0);	// !!! НДС не облагается	
-		//fptr.setParamInt( _cons.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT0);	// !!! НДС не облагается	
+		//fptr.setParam( fptr.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
 		Ответ = fptr.registration();		
 		Ошибка( Ответ );
 	    
 
 		//Если Док.СтавкаНДС = Перечисление.СтавкиНДС.НДС10 Тогда
-		//	fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 2 );
-		//	fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT10 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 2 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT10 );
 		//Иначе //18/20 %
 		//	//Константы LIBFPTR_TAX_VAT20 и LIBFPTR_TAX_VAT120 передаются в ККТ теми же значениями, как и LIBFPTR_TAX_VAT18 и LIBFPTR_TAX_VAT118. ПО может работать с любыми из этих констант.
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_DEPARTMENT, 3 );
-		//	fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT20  );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 3 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT20  );
 		//КонецЕсли;
 		//
-		//fptr.setParam( _cons.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
+		//fptr.setParam( fptr.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
 		//fptr.registration();
 	    //fptr.receiptTax();				
 		
 	КонецЕсли;
 		
-	fptr.setParamDouble(_cons.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
+	fptr.setParam(fptr.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
     Ответ = fptr.cashIncome();	
 	Ошибка( Ответ );
 	
@@ -595,23 +670,26 @@
 	Ошибка( Ответ );	
 
 	НомерЧека = ПолучитьНомерЧека();
+	
+	ЗаписатьНомерЧека( док, НомерЧека);
+		
 	Возврат НомерЧека;	
 	
 КонецФункции
 
 // ---------- Чек Отгрузки без оплаты (в кредит) без отправки электронного чека покупателю ---------- 
-Функция ОтгрузкаБезОплаты( Док ) Экспорт
+Функция ОтгрузкаБезОплаты( ВыбКасса, Док ) Экспорт
 
-	ОткрытьЧек( Док );	
+	ОткрытьЧек( ВыбКасса, Док );	
 		
   	тз = СоздатьОбъект("ТаблицаЗначений");
   	Док.ВыгрузитьТабличнуюЧасть(тз);
 	тз.ВыбратьСтроки();
 	Пока тз.ПолучитьСтроку() = 1 Цикл
 
-	    fptr.setParamString( _cons.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы(тз.Номенклатура.Наименование));
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_PRICE, тз.Цена);
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_QUANTITY, тз.Количество);	    
+	    fptr.setParam( fptr.LIBFPTR_PARAM_COMMODITY_NAME,  ЗаменитьСпецСимволы(тз.Номенклатура.Наименование));
+	    fptr.setParam( fptr.LIBFPTR_PARAM_PRICE, тз.Цена);
+	    fptr.setParam( fptr.LIBFPTR_PARAM_QUANTITY, тз.Количество);	    
 
 		//1212	Признак предмета расчета	int
 		// Признак предмета расчёта. Свойство ItemType может принимать значения:
@@ -627,7 +705,7 @@
 		// 	10 -  аванс, задаток, предоплата, кредит, взносе в счет оплаты, пени, штраф, вознаграждение, бонус и иной аналогичный предмет расчета
 		// 	11 -  предмет расчета, состоящий из предметов, каждому из которых может быть присвоено значение от 0 до 10 (набор)
 		// 	12 -  предмет расчета, не относящийся к предметам расчета, которым может быть присвоено значение от 0 до 11
-		fptr.setParamInt( 1212, 1  );
+		fptr.setParam( 1212, 1  );
 		
 		//1214	Признак способа расчета	int
 		// Признак способа расчёта. Свойство PaymentMode может принимать значения:
@@ -639,40 +717,40 @@
 		// 	6 - Передача предмета расчета без его оплаты в момент его передачи с последующей оплатой в кредит
 		// 	7 - Оплата предмета расчета после его передачи с оплатой в кредит (оплата кредита)
 		Попытка
-			fptr.setParamInt( 1214, Док.ФФД_СпособРасчёта  );
+			fptr.setParam( 1214, Док.ФФД_СпособРасчёта  );
 		Исключение
-			fptr.setParamInt( 1214, 6 );
+			fptr.setParam( 1214, 6 );
 		КонецПопытки;		
 
 		//1222	Признак агента по предмету расчета	int
-		//fptr.setParamInt( 1222, _cons.LIBFPTR_AT_NONE );
+		//fptr.setParam( 1222, fptr.LIBFPTR_AT_NONE );
 		
 		////Регистрация позиции без расчета суммы налога
-		//fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT0);		
-		//fptr.setParamBool( _cons.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, fptr.TRUE() );		
+		//fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT0);		
+		//fptr.setParamBool( fptr.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, fptr.TRUE() );		
 	    //fptr.registration();		
 
 		//Если тз.СтавкаНДС = Перечисление.СтавкиНДС.НДС10 Тогда
-		//	fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 2 );
-		//	fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT10 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 2 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT10 );
 		//Иначе //18/20 %
 		//	//Константы LIBFPTR_TAX_VAT20 и LIBFPTR_TAX_VAT120 передаются в ККТ теми же значениями, как и LIBFPTR_TAX_VAT18 и LIBFPTR_TAX_VAT118. ПО может работать с любыми из этих констант.
-		//	fptr.setParamInt( _cons.LIBFPTR_PARAM_DEPARTMENT, 3 );
-		//	fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT20  );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_DEPARTMENT, 3 );
+		//	fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT20  );
 		//КонецЕсли;
 		
 		УстановитьСтавкуНДС( док );
 
 		Ответ = fptr.registration();
 		Ошибка( Ответ );
-		//fptr.setParamDouble( _cons.LIBFPTR_PARAM_TAX_SUM, тз.СуммаНДС);
+		//fptr.setParam( fptr.LIBFPTR_PARAM_TAX_SUM, тз.СуммаНДС);
 	    //fptr.receiptTax();		
 		
 	КонецЦикла;
 			
 	////Допускается регистрация итога меньше суммы чека, но только в рамках копеек. Т.е., если общая сумма чека равна 1000.57, то можно зарегистрировать итог от 1000.00 до 1000.57.
 	////Метод не является обязательным. Если его не использовать, сумма чека будет посчитана автоматически, без округлений копеек.
-	//fptr.setParam( _cons.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
+	//fptr.setParam( fptr.LIBFPTR_PARAM_SUM, док.СуммаВзаиморасчетов);
     //fptr.receiptTotal();
 	
 	//Способ расчета (LIBFPTR_PARAM_PAYMENT_TYPE) может принимать следующие значения:
@@ -686,8 +764,8 @@
 	//LIBFPTR_PT_8 - способ расчета №8
 	//LIBFPTR_PT_9 - способ расчета №9
 	//LIBFPTR_PT_10 - способ расчета №10
-	fptr.setParamInt( _cons.LIBFPTR_PARAM_PAYMENT_TYPE, _cons.LIBFPTR_PT_CREDIT);	
-	fptr.setParamDouble( _cons.LIBFPTR_PARAM_PAYMENT_SUM, док.СуммаВзаиморасчетов);
+	fptr.setParam( fptr.LIBFPTR_PARAM_PAYMENT_TYPE, fptr.LIBFPTR_PT_CREDIT);	
+	fptr.setParam( fptr.LIBFPTR_PARAM_PAYMENT_SUM, док.СуммаВзаиморасчетов);
 	Ответ = fptr.payment();
 	Ошибка( Ответ );
 	
@@ -695,21 +773,22 @@
 	Ошибка( Ответ );
 	
 	НомерЧека = ПолучитьНомерЧека();
+	ЗаписатьНомерЧека( док, НомерЧека );
 	Возврат НомерЧека;
 КонецФункции
 
 
-Функция ОформитьЧек( Док ) Экспорт
+Функция ОформитьЧек( ВыбКасса, Док ) Экспорт
 
 	НомерЧека ="";
 	
 	Если Док.Вид() = "ПКО" Тогда
 			
-		НомерЧека = ОПЛАТА( Док );
+		НомерЧека = ОПЛАТА( ВыбКасса, Док );
 		
 	ИначеЕсли Док.Вид() = "Реализация" Тогда
 		
-		НомерЧека = ОтгрузкаБезОплаты( Док );
+		НомерЧека = ОтгрузкаБезОплаты( ВыбКасса, Док );
 
 	Иначе
 		Сообщить("Операции с документом = "+Док.Вид()+" не определены","!");
@@ -730,32 +809,37 @@
 //регистрация оплат (необязательный пункт)
 //закрытие чека
 //проверка состояния чека
-Процедура ОткрытьЧекКоррекции( док )
+Процедура ОткрытьЧекКоррекции( ВыбКасса, Док )
 	
-	ДобавитьКассира( ВыбКасса );
-		
+	// отменим чек, если он был открыт
+	fptr.cancelReceipt();
+
 	fptr.setParam(1177, Док.Вид()+" №"+Док.НомерДок); 	//Наименование основания для коррекции
     fptr.setParam(1178, Док.ДатаДок); 					//Дата совершения корректируемого расчета
-    fptr.setParam(1179, Док.НомерДок); 					//Номер предписания налогового органа
+    //fptr.setParam(1179, Док.НомерДок); 					//Номер предписания налогового органа
     fptr.utilFormTlv();
-    correctionInfo = fptr.getParamByteArray(fptr.LIBFPTR_PARAM_TAG_VALUE);
+    //correctionInfo = fptr.getParamByteArray(fptr.LIBFPTR_PARAM_TAG_VALUE);
 
     fptr.setParam(fptr.LIBFPTR_PARAM_RECEIPT_TYPE, fptr.LIBFPTR_RT_SELL_CORRECTION);
-    fptr.setParam(1173, 1);
-    fptr.setParam(1174, correctionInfo);
+    fptr.setParam(1173, 0);
+    fptr.setParamByte(1174, fptr.getParamByteArray(fptr.LIBFPTR_PARAM_TAG_VALUE));
     Ответ = fptr.openReceipt();	
+
+	// openCheckCorrection( string strName, DateTime dateDoc, string NalogPredpisanie = "")		
+	//Ответ = fptr.openCheckCorrection( Док.Вид()+" №"+Док.НомерДок, Док.ДатаДок )
+	
 	Ошибка( Ответ );
 	
 КонецПроцедуры
 
 
-Процедура ОформитьЧекКоррекции( Док ) Экспорт
+Процедура ОформитьЧекКоррекции( ВыбКасса, Док ) Экспорт
 
-	ОткрытьЧекКоррекции( Док );
+	ОткрытьЧекКоррекции( ВыбКасса, Док );
 
-	    fptr.setParamString( _cons.LIBFPTR_PARAM_COMMODITY_NAME,  "предоплата за мясопродукцию из мяса птицы в ассортименте по договору" );
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_PRICE, Док.Сумма);
-	    fptr.setParamDouble( _cons.LIBFPTR_PARAM_QUANTITY, 1);	    
+	    fptr.setParam( fptr.LIBFPTR_PARAM_COMMODITY_NAME,  "предоплата за мясопродукцию из мяса птицы в ассортименте по договору" );
+	    fptr.setParam( fptr.LIBFPTR_PARAM_PRICE, Док.Сумма);
+	    fptr.setParam( fptr.LIBFPTR_PARAM_QUANTITY, 1);	    
 
 		//1212	Признак предмета расчета	int
 		// Признак предмета расчёта. Свойство ItemType может принимать значения:
@@ -772,9 +856,9 @@
 		// 	11 -  предмет расчета, состоящий из предметов, каждому из которых может быть присвоено значение от 0 до 10 (набор)
 		// 	12 -  предмет расчета, не относящийся к предметам расчета, которым может быть присвоено значение от 0 до 11
 		Попытка
-			fptr.setParamInt( 1212, Док.ФФД_ПредметаРасчёта  );
+			fptr.setParam( 1212, Док.ФФД_ПредметаРасчёта  );
 		Исключение
-			fptr.setParamInt( 1212, 10  );
+			fptr.setParam( 1212, 10  );
 		КонецПопытки;		
 		
 		//1214	Признак способа расчета	int
@@ -787,23 +871,23 @@
 		// 	6 - Передача предмета расчета без его оплаты в момент его передачи с последующей оплатой в кредит
 		// 	7 - Оплата предмета расчета после его передачи с оплатой в кредит (оплата кредита)
 		Попытка
-			fptr.setParamInt( 1214, Док.ФФД_СпособРасчёта  );
+			fptr.setParam( 1214, Док.ФФД_СпособРасчёта  );
 		Исключение
-			fptr.setParamInt( 1214, 2 );
+			fptr.setParam( 1214, 2 );
 		КонецПопытки;			
 
 		////1222	Признак агента по предмету расчета	int
-		//fptr.setParamInt( 1222, _cons.LIBFPTR_AT_NONE );
+		//fptr.setParam( 1222, fptr.LIBFPTR_AT_NONE );
 		
 		////Регистрация позиции без расчета суммы налога
-		//fptr.setParam( _cons.LIBFPTR_PARAM_TAX_TYPE, _cons.LIBFPTR_TAX_VAT0);		
-		//fptr.setParam( _cons.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
+		//fptr.setParam( fptr.LIBFPTR_PARAM_TAX_TYPE, fptr.LIBFPTR_TAX_VAT0);		
+		//fptr.setParam( fptr.LIBFPTR_PARAM_USE_ONLY_TAX_TYPE, 1);
 		//fptr.registration();		
 	    
 
 		УстановитьСтавкуНДС( док );
 		
-		fptr.setParamInt( _cons.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
+		fptr.setParam( fptr.LIBFPTR_PARAM_TAX_SUM, 0); //При передаче значения 0 рассчитывается автоматически
 		Ответ = fptr.registration();		
 		Ошибка( Ответ );	
 	
@@ -824,84 +908,44 @@
 
 //} ================  Чек Коррекции ===================================================
 
-
-// --------------------------- Подключение к устройству -----------------------------//
-Процедура ПодключениеФР()
-	
-	_cons = fptr.constants();
-    fptr.setSingleSetting( _cons.LIBFPTR_SETTING_MODEL, Строка(_cons.LIBFPTR_MODEL_ATOL_AUTO) );
-    fptr.setSingleSetting( _cons.LIBFPTR_SETTING_PORT, Строка(_cons.LIBFPTR_PORT_COM) );
-	fptr.setSingleSetting( _cons.LIBFPTR_SETTING_COM_FILE, "COM"+НомерПорта);
-    fptr.setSingleSetting( _cons.LIBFPTR_SETTING_BAUDRATE, Строка(_cons.LIBFPTR_PORT_BR_115200));
-    fptr.applySingleSettings();
-	
-	//fptr.showProperties(_cons.LIBFPTR_GUI_PARENT_NATIVE, "дескриптор окна");
-	
-	ответ = fptr.open();
-	Ошибка(Ответ);	
-	
-	Если fptr.isOpened()=0 Тогда 
-		Ошибка("Порт не открыт ");
-	КонецЕсли;
-	
-КонецПроцедуры
-
- // предопределенная процедура
- Процедура ПриВыбореЗакладки(НомерЗакладки, ЗначениеЗакладки)
-	
- 	Если ЗначениеЗакладки="Основной" Тогда
-		Форма.ИспользоватьСлой("Основной");
-	Иначе //Если ЗначениеЗакладки="Группа" Тогда
-		Форма.ИспользоватьСлой("Печать");
-	КонецЕсли;
-	
-	Форма.Закладки.ТекущаяСтрока(НомерЗакладки);
-	
-КонецПроцедуры
-
-//******************************************************************************
-// Предопределенная процедура
+////******************************************************************************
+//// Предопределенная процедура
+////
+//Процедура ПриОткрытии()
+//	
+//	
+//	ПодключениеФР();
 //
-Процедура ПриОткрытии()
-	
-	Форма.ИспользоватьЗакладки(1);
-	Форма.Закладки.ДобавитьЗначение("Основной","Оформление чеков");
-	Форма.Закладки.ДобавитьЗначение("Печать","Групповая печать");
-
-	Форма.ИспользоватьСлой("Основной");
-	
-	ПодключениеФР();
-
-	Если ПустоеЗначение( Форма.Параметр) = 0 Тогда
-		Док      = Форма.Параметр.Получить("Контекст");
-		//Устройство = Форма.Параметр.Получить("Устройство");
-		//КолвоКопий = Форма.Параметр.Получить("КоличествоКопий");
-		//СразуНаПринтер = Число(Форма.Параметр.Получить("СразуПечать"));
-
-		Если ТипЗначенияСтр(Док) = "Реализация" Тогда
-			
-			НомерЧека = ОтгрузкаБезОплаты(Док);
-			
-		ИначеЕсли ТипЗначенияСтр(Док) = "ПКО" Тогда
-			
-			НомерЧека = ОПЛАТА( Док );
-		
-		КонецЕсли;
-
-		Попытка
-			//НомерЧека =  ПолучитьНомерЧека();
-			Форма.Параметр.Установить("НомерЧека", НомерЧека);
-			//Форма.Параметр.Установить("НомерЧека", 123);
-		Исключение
-			Сообщить(ОписаниеОшибки());
-			Форма.Параметр.Установить("НомерЧека", "");
-		КонецПопытки;
-
-		Статусвозврата(0);
-		Возврат;
-	КонецЕсли;
-
-КонецПроцедуры // ПриОткрытии()
+//	Если ПустоеЗначение( Сам().Форма.Параметр) = 0 Тогда
+//		Док      = Сам().Форма.Параметр.Получить("Контекст");
+//		//Устройство = Форма.Параметр.Получить("Устройство");
+//		//КолвоКопий = Форма.Параметр.Получить("КоличествоКопий");
+//		//СразуНаПринтер = Число(Форма.Параметр.Получить("СразуПечать"));
+//
+//		Если ТипЗначенияСтр(Док) = "Реализация" Тогда
+//			
+//			НомерЧека = ОтгрузкаБезОплаты( ВыбКасса, Док );
+//			
+//		ИначеЕсли ТипЗначенияСтр(Док) = "ПКО" Тогда
+//			
+//			НомерЧека = ОПЛАТА( Док );
+//		
+//		КонецЕсли;
+//
+//		Попытка
+//			//НомерЧека =  ПолучитьНомерЧека();
+//			Сам().Форма.Параметр.Установить("НомерЧека", НомерЧека);
+//			//Форма.Параметр.Установить("НомерЧека", 123);
+//		Исключение
+//			Сообщить(ОписаниеОшибки());
+//			Сам().Форма.Параметр.Установить("НомерЧека", "");
+//		КонецПопытки;
+//
+//		Статусвозврата(0);
+//		Возврат;
+//	КонецЕсли;
+//
+//КонецПроцедуры // ПриОткрытии()
 
 Процедура ПриЗакрытии()
 	
@@ -942,50 +986,50 @@
 //
 //КонецПроцедуры
 
-Процедура ВерсияДрайвера()
+Процедура ВерсияДрайвера() Экспорт
 	
 	Сообщить("Версия "+ fptr.version() );
 
-	fptr.setParamInt(_cons.LIBFPTR_PARAM_DATA_TYPE, _cons.LIBFPTR_DT_STATUS);
+	fptr.setParam(fptr.LIBFPTR_PARAM_DATA_TYPE, fptr.LIBFPTR_DT_STATUS);
     Ответ = fptr.queryData();	
 	Ошибка(Ответ);	
 	
-	Сообщить("    operatorID      := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_OPERATOR_ID) );
-	Сообщить("    logicalNumber   := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_LOGICAL_NUMBER) );
-	Сообщить("    shiftState      := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_SHIFT_STATE) );
-	Сообщить("    model           := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_MODEL) );
-	Сообщить("    mode            := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_MODE) );
-	Сообщить("    submode         := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_SUBMODE) );
-	Сообщить("    receiptNumber   := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_RECEIPT_NUMBER) );
-	Сообщить("    documentNumber  := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_DOCUMENT_NUMBER) );
-	Сообщить("    shiftNumber     := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_SHIFT_NUMBER) );
-	Сообщить("    receiptType     := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_RECEIPT_TYPE) );
-	Сообщить("    lineLength      := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_RECEIPT_LINE_LENGTH) );
-	Сообщить("    lineLengthPix   := " + fptr.getParamInt(_cons.LIBFPTR_PARAM_RECEIPT_LINE_LENGTH_PIX) );
-	Сообщить("    receiptSum  := " + fptr.getParamDouble(_cons.LIBFPTR_PARAM_RECEIPT_SUM) );
-	Сообщить("    isFiscalDevice          := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_FISCAL) );
-	Сообщить("    isFiscalFN              := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_FN_FISCAL) );
-	Сообщить("    isFNPresent             := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_FN_PRESENT) );
-	Сообщить("    isInvalidFN             := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_INVALID_FN) );
-	Сообщить("    isCashDrawerOpened      := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_CASHDRAWER_OPENED) );
-	Сообщить("    isPaperPresent          := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_RECEIPT_PAPER_PRESENT) );
-	Сообщить("    isPaperNearEnd          := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_PAPER_NEAR_END) );
-	Сообщить("    isCoverOpened           := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_COVER_OPENED) );
-	Сообщить("    isPrinterConnectionLost := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_PRINTER_CONNECTION_LOST) );
-	Сообщить("    isPrinterError          := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_PRINTER_ERROR) );
-	Сообщить("    isCutError              := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_CUT_ERROR) );
-	Сообщить("    isPrinterOverheat       := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_PRINTER_OVERHEAT) );
-	Сообщить("    isDeviceBlocked         := " + fptr.getParamBool(_cons.LIBFPTR_PARAM_BLOCKED) );
-	Сообщить("    dateTime  := " + fptr.getParamDateTime(_cons.LIBFPTR_PARAM_DATE_TIME) );
-	Сообщить("    serialNumber    := " + fptr.getParamString(_cons.LIBFPTR_PARAM_SERIAL_NUMBER) );
-	Сообщить("    modelName       := " + fptr.getParamString(_cons.LIBFPTR_PARAM_MODEL_NAME) );
-	Сообщить("    firmwareVersion := " + fptr.getParamString(_cons.LIBFPTR_PARAM_UNIT_VERSION) );
+	Сообщить("    operatorID      := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_OPERATOR_ID) );
+	Сообщить("    logicalNumber   := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_LOGICAL_NUMBER) );
+	Сообщить("    shiftState      := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_SHIFT_STATE) );
+	Сообщить("    model           := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_MODEL) );
+	Сообщить("    mode            := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_MODE) );
+	Сообщить("    submode         := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_SUBMODE) );
+	Сообщить("    receiptNumber   := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_RECEIPT_NUMBER) );
+	Сообщить("    documentNumber  := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_DOCUMENT_NUMBER) );
+	Сообщить("    shiftNumber     := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_SHIFT_NUMBER) );
+	Сообщить("    receiptType     := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_RECEIPT_TYPE) );
+	Сообщить("    lineLength      := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_RECEIPT_LINE_LENGTH) );
+	Сообщить("    lineLengthPix   := " + fptr.getParamInt(fptr.LIBFPTR_PARAM_RECEIPT_LINE_LENGTH_PIX) );
+	Сообщить("    receiptSum  := " + fptr.getParamDouble(fptr.LIBFPTR_PARAM_RECEIPT_SUM) );
+	Сообщить("    isFiscalDevice          := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_FISCAL) );
+	Сообщить("    isFiscalFN              := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_FN_FISCAL) );
+	Сообщить("    isFNPresent             := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_FN_PRESENT) );
+	Сообщить("    isInvalidFN             := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_INVALID_FN) );
+	Сообщить("    isCashDrawerOpened      := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_CASHDRAWER_OPENED) );
+	Сообщить("    isPaperPresent          := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_RECEIPT_PAPER_PRESENT) );
+	Сообщить("    isPaperNearEnd          := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_PAPER_NEAR_END) );
+	Сообщить("    isCoverOpened           := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_COVER_OPENED) );
+	Сообщить("    isPrinterConnectionLost := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_PRINTER_CONNECTION_LOST) );
+	Сообщить("    isPrinterError          := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_PRINTER_ERROR) );
+	Сообщить("    isCutError              := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_CUT_ERROR) );
+	Сообщить("    isPrinterOverheat       := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_PRINTER_OVERHEAT) );
+	Сообщить("    isDeviceBlocked         := " + fptr.getParamBool(fptr.LIBFPTR_PARAM_BLOCKED) );
+	Сообщить("    dateTime  := " + fptr.getParamDateTime(fptr.LIBFPTR_PARAM_DATE_TIME) );
+	Сообщить("    serialNumber    := " + fptr.getParamString(fptr.LIBFPTR_PARAM_SERIAL_NUMBER) );
+	Сообщить("    modelName       := " + fptr.getParamString(fptr.LIBFPTR_PARAM_MODEL_NAME) );
+	Сообщить("    firmwareVersion := " + fptr.getParamString(fptr.LIBFPTR_PARAM_UNIT_VERSION) );
 	
 КонецПроцедуры
 
 //{  -------------- Можно подключить класс --------------------------
 Процедура Конструктор()
-
+	
 	ПодключениеФР();	
 	
 КонецПроцедуры
@@ -1017,7 +1061,7 @@
 //ИмяКомпоненты = "AddIn.Fptr10_kb99";
 Сообщить("Подключаем ["+ИмяКомпоненты+"] ");
 Попытка
-	ПодключитьВнешнююКомпоненту(ИмяКомпоненты);
+	//ПодключитьВнешнююКомпоненту(ИмяКомпоненты);
 	//ЗагрузитьВнешнююКомпоненту(ИмяКомпоненты);
 	fptr = СоздатьОбъект(ИмяКомпоненты);
 Исключение
@@ -1025,8 +1069,3 @@
 	Сообщить(Ошибка + ОписаниеОшибки(),"!"); 	
 КонецПопытки;
 
-НомерПорта = 6;
-НачДата = ТекущаяДата();
-КонДата = ТекущаяДата();
-ВыбАвтор = глПользователь;
-ВыбКасса = глПользователь.ОсновнаяКасса;
