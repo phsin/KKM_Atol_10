@@ -816,7 +816,7 @@
 
 	fptr.setParam(1177, Док.Вид()+" №"+Док.НомерДок); 	//Наименование основания для коррекции
     fptr.setParam(1178, Док.ДатаДок); 					//Дата совершения корректируемого расчета
-    //fptr.setParam(1179, Док.НомерДок); 					//Номер предписания налогового органа
+    fptr.setParam(1179, 0); 					//Номер предписания налогового органа
     fptr.utilFormTlv();
     //correctionInfo = fptr.getParamByteArray(fptr.LIBFPTR_PARAM_TAG_VALUE);
 

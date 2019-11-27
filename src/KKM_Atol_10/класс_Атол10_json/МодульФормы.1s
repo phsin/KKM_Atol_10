@@ -13,6 +13,17 @@
 	КонецЕсли;
 КонецПроцедуры
 
+Функция ККМJson( запрос )
+	
+    fptr.setParam( _cons.LIBFPTR_PARAM_JSON_DATA, запрос );
+    fptr.processJson();
+
+    result = fptr.getParamString( _cons.LIBFPTR_PARAM_JSON_DATA );
+	
+	return result;
+	
+КонецФункции
+
 // --------------------------- Подключение к устройству -----------------------------//
 Процедура ПодключениеФР( НомерПорта=3 ) Экспорт
 	
@@ -807,28 +818,28 @@
 //регистрация оплат (необязательный пункт)
 //закрытие чека
 //проверка состояния чека
-//Процедура ОткрытьЧекКоррекции( ВыбКасса, Док )
-//	
-////	fptr.setParamString(1177, Док.Вид()+" №"+Док.НомерДок); 	//Наименование основания для коррекции
-////    fptr.setParamDate(1178, Док.ДатаДок); 					//Дата совершения корректируемого расчета
-////    //fptr.setParamInt(1179, 0); 					//Номер предписания налогового органа
-////    fptr.utilFormTlv();
-////    correctionInfo = fptr.getParamByteArray(_cons.LIBFPTR_PARAM_TAG_VALUE);
-////
-////    fptr.setParamInt( _cons.LIBFPTR_PARAM_RECEIPT_TYPE, _cons.LIBFPTR_RT_SELL_CORRECTION);
-////    fptr.setParamInt(1173, 0); // самостоятельная операция
-////    fptr.setParamByte(1174, correctionInfo);
-////    Ответ = fptr.openReceipt();	
+Процедура ОткрытьЧекКоррекции( ВыбКасса, Док )
+	
+//	fptr.setParamString(1177, Док.Вид()+" №"+Док.НомерДок); 	//Наименование основания для коррекции
+//    fptr.setParamDate(1178, Док.ДатаДок); 					//Дата совершения корректируемого расчета
+//    //fptr.setParamInt(1179, 0); 					//Номер предписания налогового органа
+//    fptr.utilFormTlv();
+//    correctionInfo = fptr.getParamByteArray(_cons.LIBFPTR_PARAM_TAG_VALUE);
 //
-//	// отменим чек, если он был открыт
-//	fptr.cancelReceipt();
-//	
-//	// openCheckCorrection( string strName, DateTime dateDoc, string NomerNalogPredpisanie )		
-//	Ответ = fptr.openCheckCorrection( Док.Вид()+" №"+Док.НомерДок, Док.ДатаДок, "0");
-//	
-//	Ошибка( Ответ );
-//	
-//КонецПроцедуры
+//    fptr.setParamInt( _cons.LIBFPTR_PARAM_RECEIPT_TYPE, _cons.LIBFPTR_RT_SELL_CORRECTION);
+//    fptr.setParamInt(1173, 0); // самостоятельная операция
+//    fptr.setParamByte(1174, correctionInfo);
+//    Ответ = fptr.openReceipt();	
+
+	// отменим чек, если он был открыт
+	fptr.cancelReceipt();
+	
+	// openCheckCorrection( string strName, DateTime dateDoc, string NalogPredpisanie )		
+	Ответ = fptr.openCheckCorrection( Док.Вид()+" №"+Док.НомерДок, Док.ДатаДок, "нет");
+	
+	Ошибка( Ответ );
+	
+КонецПроцедуры
 
 
 Процедура ОформитьЧекКоррекции( ВыбКасса, Док ) Экспорт
@@ -875,10 +886,10 @@
 	
 	Сообщить(Запрос);
 	
-    fptr.setParamString( _cons.LIBFPTR_PARAM_JSON_DATA, Запрос);
+    fptr.setParam( fptr.LIBFPTR_PARAM_JSON_DATA, Запрос);
     fptr.processJson();
 
-    result = fptr.getParamString( _cons.LIBFPTR_PARAM_JSON_DATA );	
+    result = fptr.getParamString( fptr.LIBFPTR_PARAM_JSON_DATA );	
 	Сообщить(result);
 
 КонецПроцедуры
